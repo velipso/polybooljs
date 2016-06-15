@@ -5,7 +5,7 @@
  * @preserve Project Home: https://github.com/voidqk/polybooljs
  */
 
-var Epsilon = require('./lib/epsilon')
+var Epsilon = require('./lib/epsilon');
 var Intersecter = require('./lib/intersecter');
 var SegmentChainer = require('./lib/segment-chainer');
 var SegmentSelector = require('./lib/segment-selector');
@@ -50,6 +50,8 @@ function calc(regions1, inverted1, regions2, inverted2, operations, epsilon, bui
 	//     other operations...
 	//   }
 
+	if (operations.length <= 0)
+		return {};
 	var inverted = {
 		union: inverted1 || inverted2,
 		intersect: inverted1 && inverted2,
@@ -57,14 +59,15 @@ function calc(regions1, inverted1, regions2, inverted2, operations, epsilon, bui
 		differenceRev: !inverted1 && inverted2,
 		xor: inverted1 !== inverted2
 	};
-	if (operations.length <= 0)
-		return {};
 	operations.forEach(function(op){
 		if (!inverted.hasOwnProperty(op))
 			throw new Error('invalid PolyBool operation: ' + op);
 	});
 
-	epsilon = epsilon || Epsilon();
+	if (typeof epsilon === 'number')
+		epsilon = Epsilon(epsilon);
+	else
+		epsilon = Epsilon();
 
 	var i1 = Intersecter(true, epsilon, buildLog);
 	regions1.forEach(i1.addRegion);
