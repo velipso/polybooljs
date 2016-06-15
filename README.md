@@ -32,12 +32,13 @@ Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/
 ## Example
 
 ```javascript
+var PolyBool = require('polybooljs');
 PolyBool.union(
   [ [[100,100],[200,200],[300,100]], [[300,100],[300,200],[400,100]] ],
   false,
   [ [[50,50],[200,50],[300,200]] ],
   false
-)
+);
 ==> {
   regions: [
     [[400,100],[300,100],[300,200],
