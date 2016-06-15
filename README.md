@@ -32,8 +32,7 @@ PolyBool.union(
   [ [[50,50],[200,50],[300,200]] ],
   false
 )
-==> result
-{
+==> {
   regions: [
     [[400,100],[300,100],[300,200],
      [260,140],[300,100],[233.33333333333331,100],
@@ -47,19 +46,23 @@ PolyBool.union(
 ## Basic functions
 
 ```javascript
-PolyBool.union        (regions1, inverted1, regions2, inverted2, [epsilon, [buildLog]]) // poly1 || poly2
-PolyBool.intersect    (regions1, inverted1, regions2, inverted2, [epsilon, [buildLog]]) // poly1 && poly2
-PolyBool.difference   (regions1, inverted1, regions2, inverted2, [epsilon, [buildLog]]) // poly1 - poly2
-PolyBool.differenceRev(regions1, inverted1, regions2, inverted2, [epsilon, [buildLog]]) // poly2 - poly1
-PolyBool.xor          (regions1, inverted1, regions2, inverted2, [epsilon, [buildLog]]) // poly1 ^ poly2
+PolyBool.union(                     // poly1 || poly2
+  regions1, inverted1,              // <-- polygon 1
+  regions2, inverted2,              // <-- polygon 2
+  [epsilon, [buildLog]]             // <-- optional
+);
+PolyBool.intersect    (...same...); // poly1 && poly2
+PolyBool.difference   (...same...); // poly1 - poly2
+PolyBool.differenceRev(...same...); // poly2 - poly1
+PolyBool.xor          (...same...); // poly1 ^ poly2
 ```
 
 Where `regionsX` is a list regions for the polygon:
 
 ```javascript
 [
-  [ [100, 100], [200, 200], [300, 100] ], // <- a single region
-  [ [200, 100], [300, 200], [400, 100] ]
+  [ [10, 10], [20, 20], [30, 10] ], // <- a single region
+  [ [20, 10], [30, 20], [40, 10] ]
 ]
 ```
 
@@ -83,7 +86,12 @@ Returns an object:
 The algorithm produces enough information to calculate all the operations.  If you want multiple operations performed, it is much more efficient to request all of them at once, via:
 
 ```javascript
-PolyBool.calculate(regions1, inverted1, regions2, inverted2, operations, [epsilon, [buildLog]])
+PolyBool.calculate(
+  regions1, inverted1,   // <--- polygon 1, like before
+  regions2, inverted2,   // <--- polygon 2, like before
+  operations,            // <--- list of operations to compute
+  [epsilon, [buildLog]]  // <--- optional
+);
 ```
 
 Where `regionsX`/`invertedX` are the same as before, and `operations` is a list of strings that are the operations to perform.
@@ -92,9 +100,9 @@ To calculate all operations, pass the following as the `operations` parameter:
 
 `[ 'union', 'intersect', 'difference', 'differenceRev', 'xor' ]`
 
-If you want less operations, just remove them from the list.
+If you want less operations, just remove them from the list.  Order doesn't matter.
 
-The function returns an object with the result of each requested operation:
+The function returns an object with the result of each requested operation as the key:
 
 ```javascript
 {
@@ -114,7 +122,7 @@ The function returns an object with the result of each requested operation:
 
 Due to the beauty of floating point reality, floating point calculations are not exactly perfect.  This is a problem when trying to detect whether lines are on top of each other, or if verticies are exactly the same.
 
-The `epsilon` value in the API function calls allows you to set the boundary for considering values equal.
+The `epsilon` value in the API function calls allows you to set the boundary for considering values equal.  It is a number, and the default is `0.0000000001`.
 
 Normally you would expect this to work:
 
@@ -138,7 +146,7 @@ This not-quite-equal problem is a bit annoying.
 
 Fortunately, `PolyBool` has already figured out (or stolen) the required formulas, so all you need to do is provide an `epsilon` value, and everything will (read: should) work.
 
-The current default is `0.0000000001`.  That works for the most part.  If your polygons are really really large or really really tiny, then you will probably have to come up with your own epsilon value.
+If your polygons are really really large or really really tiny, then you will probably have to come up with your own epsilon value.
 
 If `PolyBool` detects that your epsilon is too small, it will throw an error to try and help you.
 
@@ -155,7 +163,7 @@ If you want a build log for some reason, you can create one via:
 You can inspect the log by looking in the values inside of `buildLog.list`:
 
 ```javascript
-buildLog.forEach(function(logEntry){
+buildLog.list.forEach(function(logEntry){
   console.log(logEntry.type, logEntry.data);
 });
 ```
