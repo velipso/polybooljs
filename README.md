@@ -25,7 +25,7 @@ Based somewhat on the F. Martinez (2008) algorithm:
 
 `npm install polybooljs`
 
-Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist) directory for a single file build.
+Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist) directory for a single file build.  When included on a page, it will expose the global `PolyBool`.
 
 # Crash Course
 
