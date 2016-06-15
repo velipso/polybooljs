@@ -183,6 +183,7 @@ function BuildLog(){
 			return push('check', { seg1: seg1, seg2: seg2 });
 		},
 		segmentChop: function(seg, end){
+			push('div_seg', { seg: seg, pt: end });
 			return push('chop', { seg: seg, pt: end });
 		},
 		statusRemove: function(seg){
@@ -654,7 +655,8 @@ function Intersecter(selfIntersection, eps, buildLog){
 
 					//	         (a1)---(a2)
 					//	  (b1)----------(b2)
-					return eventDivide(ev2, a1);
+					eventDivide(ev2, a1);
+					return false;
 				}
 			}
 			else{
@@ -761,21 +763,29 @@ function Intersecter(selfIntersection, eps, buildLog){
 				// calculate fill flags
 				//
 				if (selfIntersection){
-					// first, calculate whether we are filled below us
+					var toggle; // are we a toggling edge?
+					if (ev.seg.myFill.below === null) // if we are a new segment...
+						toggle = true; // then we toggle
+					else // we are a segment that has previous knowledge from a division
+						toggle = ev.seg.myFill.above !== ev.seg.myFill.below; // calculate toggle
+
+					// next, calculate whether we are filled below us
 					if (!below){ // if nothing is below us...
 						// we are filled below us if the polygon is inverted
 						ev.seg.myFill.below = primaryPolyInverted;
 					}
 					else{
-						// otherwise, we know the answer -- it's the same if whatever is below us is
-						// filled above it
+						// otherwise, we know the answer -- it's the same if whatever is below
+						// us is filled above it
 						ev.seg.myFill.below = below.seg.myFill.above;
 					}
 
-					// since now we know if we're filled below us, we can calculate whether we're
-					// filled above us by inverting whatever is below us
-
-					ev.seg.myFill.above = !ev.seg.myFill.below;
+					// since now we know if we're filled below us, we can calculate whether
+					// we're filled above us by applying toggle to whatever is below us
+					if (toggle)
+						ev.seg.myFill.above = !ev.seg.myFill.below;
+					else
+						ev.seg.myFill.above = ev.seg.myFill.below;
 				}
 				else{
 					// now we fill in any missing transition information, since we are all-knowing
@@ -917,7 +927,6 @@ module.exports = Intersecter;
 // simple linked list implementation that allows you to traverse down nodes and save positions
 //
 
-var TODO_LL_NODE = 0;
 var LinkedList = {
 	create: function(){
 		var my = {
@@ -977,7 +986,6 @@ var LinkedList = {
 		return my;
 	},
 	node: function(data){
-		data.LLID = TODO_LL_NODE++;
 		data.prev = null;
 		data.next = null;
 		data.remove = function(){
