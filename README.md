@@ -46,18 +46,26 @@ PolyBool.union(
 
 ## Basic functions
 
-`PolyBool.union(regions1, inverted1, regions2, inverted2)`
+```javascript
+PolyBool.union        (regions1, inverted1, regions2, inverted2) // poly1 || poly2
+PolyBool.intersect    (regions1, inverted1, regions2, inverted2) // poly1 && poly2
+PolyBool.difference   (regions1, inverted1, regions2, inverted2) // poly1 - poly2
+PolyBool.differenceRev(regions1, inverted1, regions2, inverted2) // poly2 - poly1
+PolyBool.xor          (regions1, inverted1, regions2, inverted2) // poly1 ^ poly2
+```
 
-Where `regions1`/`regions2` are lists of regions:
+Where `regionsX` is a list regions for the polygon:
 
 ```javascript
 [
-  [ [100, 100], [200, 200], [300, 100] ], // <- a single region is a list of points
+  [ [100, 100], [200, 200], [300, 100] ], // <- a single region
   [ [200, 100], [300, 200], [400, 100] ]
 ]
 ```
 
-`inverted1`/`inverted2` are bools that simply indicate if the polygon is inverted.
+A single region is a list of points in `[x, y]` format.
+
+And `invertedX` is a bool indicating whether that polygon is inverted or not.
 
 Returns an object:
 
@@ -67,22 +75,6 @@ Returns an object:
   inverted: <whether the resulting polygon is inverted>
 }
 ```
-
-`PolyBool.intersect(regions1, inverted1, regions2, inverted2)`
-
-Same as `PolyBool.union`, except for intersection.
-
-`PolyBool.difference(regions1, inverted1, regions2, inverted2)`
-
-Same as `PolyBool.union`, except for difference (`poly1 - poly2`).
-
-`PolyBool.differenceRev(regions1, inverted1, regions2, inverted2)`
-
-Same as `PolyBool.union`, except for revered difference (`poly2 - poly1`).
-
-`PolyBool.xor(regions1, inverted1, regions2, inverted2)`
-
-Same as `PolyBool.union`, except for exclusive or.
 
 # Full Documentation
 
