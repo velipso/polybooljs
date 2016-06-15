@@ -53,11 +53,15 @@ function calc(regions1, inverted1, regions2, inverted2, operations, epsilon, bui
 		union: inverted1 || inverted2,
 		intersect: inverted1 && inverted2,
 		difference: inverted1 && !inverted2,
-		reverseDifference: !inverted1 && inverted2,
+		differenceRev: !inverted1 && inverted2,
 		xor: inverted1 !== inverted2
 	};
-	if (!inverted.hasOwnProperty(op))
-		throw new Error('invalid PolyBool operation: ' + op);
+	if (operations.length <= 0)
+		return {};
+	operations.forEach(function(op){
+		if (!inverted.hasOwnProperty(op))
+			throw new Error('invalid PolyBool operation: ' + op);
+	});
 
 	epsilon = epsilon || Epsilon();
 
@@ -104,7 +108,7 @@ var PolyBool = {
 			epsilon, buildLog
 		).union;
 	},
-	intersection: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
+	intersect: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
 			regions1, inverted1,
 			regions2, inverted2,
@@ -120,13 +124,13 @@ var PolyBool = {
 			epsilon, buildLog
 		).difference;
 	},
-	reverseDifference: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
+	differenceRev: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
 			regions1, inverted1,
 			regions2, inverted2,
-			['reverseDifference'],
+			['differenceRev'],
 			epsilon, buildLog
-		).reverseDifference;
+		).differenceRev;
 	},
 	xor: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
@@ -142,6 +146,6 @@ var PolyBool = {
 };
 
 if (typeof window === 'object')
-	window.PolyBool = module.exports;
+	window.PolyBool = PolyBool;
 
 module.exports = PolyBool;

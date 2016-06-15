@@ -54,11 +54,15 @@ function calc(regions1, inverted1, regions2, inverted2, operations, epsilon, bui
 		union: inverted1 || inverted2,
 		intersect: inverted1 && inverted2,
 		difference: inverted1 && !inverted2,
-		reverseDifference: !inverted1 && inverted2,
+		differenceRev: !inverted1 && inverted2,
 		xor: inverted1 !== inverted2
 	};
-	if (!inverted.hasOwnProperty(op))
-		throw new Error('invalid PolyBool operation: ' + op);
+	if (operations.length <= 0)
+		return {};
+	operations.forEach(function(op){
+		if (!inverted.hasOwnProperty(op))
+			throw new Error('invalid PolyBool operation: ' + op);
+	});
 
 	epsilon = epsilon || Epsilon();
 
@@ -105,7 +109,7 @@ var PolyBool = {
 			epsilon, buildLog
 		).union;
 	},
-	intersection: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
+	intersect: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
 			regions1, inverted1,
 			regions2, inverted2,
@@ -121,13 +125,13 @@ var PolyBool = {
 			epsilon, buildLog
 		).difference;
 	},
-	reverseDifference: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
+	differenceRev: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
 			regions1, inverted1,
 			regions2, inverted2,
-			['reverseDifference'],
+			['differenceRev'],
 			epsilon, buildLog
-		).reverseDifference;
+		).differenceRev;
 	},
 	xor: function(regions1, inverted1, regions2, inverted2, epsilon, buildLog){
 		return calc(
@@ -143,7 +147,7 @@ var PolyBool = {
 };
 
 if (typeof window === 'object')
-	window.PolyBool = module.exports;
+	window.PolyBool = PolyBool;
 
 module.exports = PolyBool;
 
@@ -165,7 +169,7 @@ function BuildLog(){
 	function push(type, data){
 		my.list.push({
 			type: type,
-			data: JSON.parse(JSON.stringify(data)) // copy the data so it doesn't mutate
+			data: data ? JSON.parse(JSON.stringify(data)) : void 0
 		});
 		return my;
 	}
@@ -187,8 +191,8 @@ function BuildLog(){
 		segmentUpdate: function(seg){
 			return push('seg_update', { seg: seg });
 		},
-		segmentNew: function(seg){
-			return push('new_seg', { seg: seg });
+		segmentNew: function(seg, primary){
+			return push('new_seg', { seg: seg, primary: primary });
 		},
 		segmentRemove: function(seg){
 			return push('rem_seg', { seg: seg });
@@ -274,7 +278,7 @@ module.exports = BuildLog;
 
 function Epsilon(eps){
 	if (typeof eps !== 'number')
-		eps = Number.EPSILON;
+		eps = 0.0000000001; // sane default? sure why not
 	var my = {
 		epsilon: function(v){
 			if (typeof v === 'number')
@@ -368,6 +372,9 @@ function Epsilon(eps){
 			var dx = a0[0] - b0[0];
 			var dy = a0[1] - b0[1];
 
+			var A = (bdx * dy - bdy * dx) / axb;
+			var B = (adx * dy - ady * dx) / axb;
+
 			var ret = {
 				alongA: 0,
 				alongB: 0,
@@ -376,9 +383,6 @@ function Epsilon(eps){
 					a0[1] + A * ady
 				]
 			};
-
-			var A = (bdx * dy - bdy * dx) / axb;
-			var B = (adx * dy - ady * dx) / axb;
 
 			// categorize where intersection point is along A and B
 
@@ -460,7 +464,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 	// event logic
 	//
 
-	var event_root = LinkedList();
+	var event_root = LinkedList.create();
 
 	function eventCompare(p1_isStart, p1_1, p1_2, p2_isStart, p2_1, p2_2){
 		// compare the selected points first
@@ -476,11 +480,14 @@ function Intersecter(selfIntersection, eps, buildLog){
 			return p1_isStart ? 1 : -1; // favor the one that isn't the start
 
 		// otherwise, we'll have to calculate which one is below the other manually
-		return eps.pointAboveOrOnLine(p1_2, p2_1, p2_2) ? 1 : -1;
+		return eps.pointAboveOrOnLine(p1_2,
+			p2_isStart ? p2_1 : p2_2, // order matters
+			p2_isStart ? p2_2 : p2_1
+		) ? 1 : -1;
 	}
 
 	function eventAdd(ev, other_pt){
-		var here = event_root.find(function(here){
+		event_root.insertBefore(ev, function(here){
 			// should ev be inserted before here?
 			var comp = eventCompare(
 				ev  .isStart, ev  .pt,      other_pt,
@@ -488,31 +495,30 @@ function Intersecter(selfIntersection, eps, buildLog){
 			);
 			return comp < 0;
 		});
-		here.insertBefore(ev);
 	}
 
 	function eventAddSegmentStart(seg, primary){
-		var ev_start = {
+		var ev_start = LinkedList.node({
 			isStart: true,
 			pt: seg.start,
 			seg: seg,
 			primary: primary,
 			other: null,
 			status: null
-		};
+		});
 		eventAdd(ev_start, seg.end);
 		return ev_start;
 	}
 
 	function eventAddSegmentEnd(ev_start, seg, primary){
-		var ev_end = {
+		var ev_end = LinkedList.node({
 			isStart: false,
 			pt: seg.end,
 			seg: seg,
 			primary: primary,
 			other: ev_start,
 			status: null
-		};
+		});
 		ev_start.other = ev_end;
 		eventAdd(ev_end, ev_start.pt);
 	}
@@ -523,10 +529,6 @@ function Intersecter(selfIntersection, eps, buildLog){
 		return ev_start;
 	}
 
-	function eventRemove(ev){
-		event_root.find(function(here){ return here === ev }).remove();
-	}
-
 	function eventUpdateEnd(ev, end){
 		// slides an end backwards
 		//   (start)------------(end)    to:
@@ -535,10 +537,10 @@ function Intersecter(selfIntersection, eps, buildLog){
 		if (buildLog)
 			buildLog.segmentChop(ev.seg, end);
 
-		eventRemove(ev.other);
+		ev.other.remove();
 		ev.seg.end = end;
-		other.pt = end;
-		eventAdd(other, ev.pt);
+		ev.other.pt = end;
+		eventAdd(ev.other, ev.pt);
 	}
 
 	function eventDivide(ev, pt){
@@ -554,7 +556,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 		// status logic
 		//
 
-		var status_root = LinkedList();
+		var status_root = LinkedList.create();
 
 		function statusCompare(ev1, ev2){
 			var a1 = ev1.seg.start;
@@ -562,29 +564,21 @@ function Intersecter(selfIntersection, eps, buildLog){
 			var b1 = ev2.seg.start;
 			var b2 = ev2.seg.end;
 
-			if (pointsCollinear(a1, b1, b2)){
-				if (pointsCollinear(a2, b1, b2)){
+			if (eps.pointsCollinear(a1, b1, b2)){
+				if (eps.pointsCollinear(a2, b1, b2)){
 					// TODO: why do I need to do this again? why can't I just return 1 straight up?
 					return eventCompare(true, a1, a2, true, b1, b2);
 				}
-				return pointAboveOrOnLine(a2, b1, b2) ? 1 : -1;
+				return eps.pointAboveOrOnLine(a2, b1, b2) ? 1 : -1;
 			}
-			return pointAboveOrOnLine(a1, b1, b2) ? 1 : -1;
+			return eps.pointAboveOrOnLine(a1, b1, b2) ? 1 : -1;
 		}
 
 		function statusFindSurrounding(ev){
-			var above = null;
-			var below = status_root.find(function(here){
-				var comp = statusCompare(ev, here);
-				if (comp > 0)
-					return true;
-				above = here;
-				return false;
+			return status_root.findTransition(function(here){
+				var comp = statusCompare(ev, here.ev);
+				return comp > 0;
 			});
-			return {
-				above: above, // existence is checked via above === null
-				below: below  // existence is checked via below.exists()
-			};
 		}
 
 		function checkIntersection(ev1, ev2){
@@ -623,7 +617,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 				var a2_between = !a2_equ_b2 && eps.pointBetween(a2, b1, b2);
 
 				// handy for debugging:
-				// BL.log({
+				// buildLog.log({
 				//	a1_equ_b1: a1_equ_b1,
 				//	a2_equ_b2: a2_equ_b2,
 				//	a1_between: a1_between,
@@ -645,6 +639,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 				}
 				else if (a1_between){
 					if (!a2_equ_b2){
+						// make a2 equal to b2
 						if (a2_between){
 							//         (a1)---(a2)
 							//  (b1)-----------------(b2)
@@ -656,11 +651,9 @@ function Intersecter(selfIntersection, eps, buildLog){
 							eventDivide(ev1, b2);
 						}
 					}
-					//otherwise:
+
 					//	         (a1)---(a2)
 					//	  (b1)----------(b2)
-
-					// no matter what, we're dividing ev2 by a1
 					return eventDivide(ev2, a1);
 				}
 			}
@@ -694,8 +687,8 @@ function Intersecter(selfIntersection, eps, buildLog){
 		// main event loop
 		//
 		var segments = [];
-		while (event_root.exists()){
-			var ev = event_root.data();
+		while (!event_root.isEmpty()){
+			var ev = event_root.getHead();
 
 			if (buildLog)
 				buildLog.vert(ev.pt[0]);
@@ -703,28 +696,28 @@ function Intersecter(selfIntersection, eps, buildLog){
 			if (ev.isStart){
 
 				if (buildLog)
-					buildLog.segmentNew(ev.seg);
+					buildLog.segmentNew(ev.seg, ev.primary);
 
 				var surrounding = statusFindSurrounding(ev);
-				var above = surrounding.above;
-				var below = surrounding.below;
+				var above = surrounding.before ? surrounding.before.ev : null;
+				var below = surrounding.after ? surrounding.after.ev : null;
 
 				if (buildLog){
 					buildLog.tempStatus(
 						ev.seg,
-						above ? above.data().seg : false,
-						below.exists() ? below.data().seg : false
+						above ? above.seg : false,
+						below ? below.seg : false
 					);
 				}
 
 				function checkBothIntersections(){
 					if (above){
-						var eve = checkIntersection(ev, above.data());
+						var eve = checkIntersection(ev, above);
 						if (eve)
 							return eve;
 					}
-					if (below.exists())
-						return checkIntersection(ev, below.data());
+					if (below)
+						return checkIntersection(ev, below);
 					return false;
 				}
 
@@ -752,14 +745,15 @@ function Intersecter(selfIntersection, eps, buildLog){
 					if (buildLog)
 						buildLog.segmentUpdate(eve.seg);
 
-					eventRemove(ev.other);
-					eventRemove(ev);
+					ev.other.remove();
+					ev.remove();
 				}
 
-				if (event_root.data() !== ev){
+				if (event_root.getHead() !== ev){
 					// something was inserted before us in the event queue, so loop back around and
 					// process it before continuing
-					BL.rewind(ev.seg);
+					if (buildLog)
+						buildLog.rewind(ev.seg);
 					continue;
 				}
 
@@ -768,14 +762,14 @@ function Intersecter(selfIntersection, eps, buildLog){
 				//
 				if (selfIntersection){
 					// first, calculate whether we are filled below us
-					if (!below.exists()){ // if nothing is below us...
+					if (!below){ // if nothing is below us...
 						// we are filled below us if the polygon is inverted
 						ev.seg.myFill.below = primaryPolyInverted;
 					}
 					else{
 						// otherwise, we know the answer -- it's the same if whatever is below us is
 						// filled above it
-						ev.seg.myFill.below = below.data().seg.myFill.above;
+						ev.seg.myFill.below = below.seg.myFill.above;
 					}
 
 					// since now we know if we're filled below us, we can calculate whether we're
@@ -791,7 +785,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 						// if we don't have other information, then we need to figure out if we're
 						// inside the other polygon
 						var inside;
-						if (!below.exists()){
+						if (!below){
 							// if nothing is below us, then we're inside if the other polygon is
 							// inverted
 							inside =
@@ -799,11 +793,10 @@ function Intersecter(selfIntersection, eps, buildLog){
 						}
 						else{ // otherwise, something is below us
 							// so copy the below segment's other polygon's above
-							var bev = below.data().ev;
-							if (ev.primary === bev.primary)
-								inside = bev.otherFill.above;
+							if (ev.primary === below.primary)
+								inside = below.seg.otherFill.above;
 							else
-								inside = bev.myFill.above;
+								inside = below.seg.myFill.above;
 						}
 						ev.seg.otherFill = {
 							above: inside,
@@ -815,24 +808,27 @@ function Intersecter(selfIntersection, eps, buildLog){
 				if (buildLog){
 					buildLog.status(
 						ev.seg,
-						above ? above.data().seg : false,
-						below.exists() ? below.data().seg : false
+						above ? above.seg : false,
+						below ? below.seg : false
 					);
 				}
 
 				// insert the status and remember it for later removal
-				ev.other.status = below.insertBefore(ev);
+				ev.other.status = surrounding.insert(LinkedList.node({ ev: ev }));
 			}
 			else{
 				var st = ev.status;
 
+				if (st === null)
+					throw new Error('PolyBool: Zero-length segment detected; your epsilon is probably too small');
+
 				// removing the status will create two new adjacent edges, so we'll need to check
 				// for those
-				if (st.prevExists() && st.nextExists())
-					checkIntersection(st.prevData(), st.nextData());
+				if (status_root.exists(st.prev) && status_root.exists(st.next))
+					checkIntersection(st.prev.ev, st.next.ev);
 
 				if (buildLog)
-					buildLog.statusRemove(st.data().seg);
+					buildLog.statusRemove(st.ev.seg);
 
 				// remove the status
 				st.remove();
@@ -849,7 +845,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 			}
 
 			// remove the first event and continue
-			event_root.remove();
+			event_root.getHead().remove();
 		}
 
 		if (buildLog)
@@ -884,8 +880,8 @@ function Intersecter(selfIntersection, eps, buildLog){
 			//  [ [0, 0], [100, 0], [50, 100] ]
 			// you can add multiple regions before running calculate
 			var pt1;
-			var pt2 = region[0];;
-			for (var i = 1; i < region.length; i++){
+			var pt2 = region[region.length - 1];
+			for (var i = 0; i < region.length; i++){
 				pt1 = pt2;
 				pt2 = region[i];
 
@@ -921,63 +917,79 @@ module.exports = Intersecter;
 // simple linked list implementation that allows you to traverse down nodes and save positions
 //
 
-function LinkedList(){
-	function node(before){
+var TODO_LL_NODE = 0;
+var LinkedList = {
+	create: function(){
 		var my = {
-			exists: function(){
-				return before.next !== null;
+			root: { root: true, next: null },
+			exists: function(node){
+				if (node === null || node === my.root)
+					return false;
+				return true;
 			},
-			nextExists: function(){
-				return before.next !== null && before.next.next !== null;
+			isEmpty: function(){
+				return my.root.next === null;
 			},
-			prevExists: function(){
-				return before.root !== true;
+			getHead: function(){
+				return my.root.next;
 			},
-			data: function(){
-				if (before.next === null)
-					throw new Error('cannot get data from nonexistent node');
-				return before.next.data;
-			},
-			prevData: function(){
-				if (before.root)
-					throw new Error('cannot get data from nonexistent node');
-				return before.data;
-			},
-			nextData: function(){
-				if (before.next === null || before.next.next === null)
-					throw new Error('cannot get data from nonexistent node');
-				return before.next.next.data;
-			},
-			next: function(){
-				if (before.next === null)
-					throw new Error('cannot go forward from here');
-				return node(before.next);
-			},
-			remove: function(){
-				if (before.next === null)
-					throw new Error('cannot remove nonexistent node');
-				before.next = before.next.next;
-				return my;
-			},
-			insertBefore: function(data){
-				before.next = { data: data, next: before.next };
-				return node(before.next);
-			},
-			find: function(check){
-				// search forwards until we hit the end or check returns true
-				var b = before;
-				while (b.next !== null){
-					if (check(b.next.data))
-						break;
-					b = b.next;
+			insertBefore: function(node, check){
+				var last = my.root;
+				var here = my.root.next;
+				while (here !== null){
+					if (check(here)){
+						node.prev = here.prev;
+						node.next = here;
+						here.prev.next = node;
+						here.prev = node;
+						return;
+					}
+					last = here;
+					here = here.next;
 				}
-				return node(b);
+				last.next = node;
+				node.prev = last;
+				node.next = null;
+			},
+			findTransition: function(check){
+				var prev = my.root;
+				var here = my.root.next;
+				while (here !== null){
+					if (check(here))
+						break;
+					prev = here;
+					here = here.next;
+				}
+				return {
+					before: prev === my.root ? null : prev,
+					after: here,
+					insert: function(node){
+						node.prev = prev;
+						node.next = here;
+						prev.next = node;
+						if (here !== null)
+							here.prev = node;
+						return node;
+					}
+				};
 			}
 		};
 		return my;
+	},
+	node: function(data){
+		data.LLID = TODO_LL_NODE++;
+		data.prev = null;
+		data.next = null;
+		data.remove = function(){
+			data.prev.next = data.next;
+			if (data.next)
+				data.next.prev = data.prev;
+			data.prev = null;
+			data.next = null;
+		};
+		return data;
 	}
-	return node({ root: true, next: null });
-}
+};
 
 module.exports = LinkedList;
 
@@ -1031,19 +1043,19 @@ function SegmentChainer(segments, eps, buildLog){
 			var head2 = chain[1];
 			var tail  = chain[chain.length - 1];
 			var tail2 = chain[chain.length - 2];
-			if (pointsSame(head, pt1)){
+			if (eps.pointsSame(head, pt1)){
 				if (setMatch(i, true, true))
 					break;
 			}
-			else if (pointsSame(head, pt2)){
+			else if (eps.pointsSame(head, pt2)){
 				if (setMatch(i, true, false))
 					break;
 			}
-			else if (pointsSame(tail, pt1)){
+			else if (eps.pointsSame(tail, pt1)){
 				if (setMatch(i, false, true))
 					break;
 			}
-			else if (pointsSame(tail, pt2)){
+			else if (eps.pointsSame(tail, pt2)){
 				if (setMatch(i, false, false))
 					break;
 			}
@@ -1333,7 +1345,7 @@ var SegmentSelector = {
 			0, 1, 1, 0
 		], buildLog);
 	},
-	reverseDifference: function(segments, buildLog){ // secondary - primary
+	differenceRev: function(segments, buildLog){ // secondary - primary
 		// above1 below1 above2 below2    Keep?
 		//    0      0      0      0   =>   0
 		//    0      0      0      1   =>   1
