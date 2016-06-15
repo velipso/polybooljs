@@ -120,7 +120,7 @@ The function returns an object with the result of each requested operation as th
 
 # Epsilon
 
-Due to the beauty of floating point reality, floating point calculations are not exactly perfect.  This is a problem when trying to detect whether lines are on top of each other, or if verticies are exactly the same.
+Due to the beauty of floating point reality, floating point calculations are not exactly perfect.  This is a problem when trying to detect whether lines are on top of each other, or if vertices are exactly the same.
 
 The `epsilon` value in the API function calls allows you to set the boundary for considering values equal.  It is a number, and the default is `0.0000000001`.
 
