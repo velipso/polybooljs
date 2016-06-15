@@ -5,8 +5,8 @@ Boolean operations on polygons (union, intersection, difference, xor)
 # Features
 
 1. Clips polygons for all boolean operations
-2. Removes unnecessary verticies
-3. Handles segments that are coincident (overlap perfectly, share verticies, one inside the other, etc)
+2. Removes unnecessary vertices
+3. Handles segments that are coincident (overlap perfectly, share vertices, one inside the other, etc)
 4. Uses formulas that take floating point irregularities into account (via configurable epsilon)
 
 # Demo
