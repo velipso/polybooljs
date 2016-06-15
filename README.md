@@ -21,6 +21,12 @@ Based somewhat on the F. Martinez (2008) algorithm:
 
 [Code](https://github.com/akavel/martinez-src)
 
+# Installing
+
+`npm install polybooljs`
+
+Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist) directory for a single file build.
+
 # Crash Course
 
 ## Example
