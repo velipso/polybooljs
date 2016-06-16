@@ -10,10 +10,14 @@
   "keywords": [
     "polygon",
     "union",
+    "intersect",
     "intersection",
     "difference",
     "diff",
-    "xor"
+    "xor",
+    "boolean",
+    "clipping",
+    "clip"
   ],
   "author": {
     "name": "Sean",
