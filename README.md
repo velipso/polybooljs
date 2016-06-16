@@ -129,8 +129,8 @@ Suppose you wanted to union a list of polygons together.  The naive way to do it
 
 ```javascript
 // works but not efficient
-var result = PolyBool.union(polygons[0], polygons[1]);
-for (var i = 2; i < polygons.length; i++)
+var result = polygons[0];
+for (var i = 1; i < polygons.length; i++)
   result = PolyBool.union(result, polygons[i]);
 return result;
 ```
@@ -155,11 +155,11 @@ Suppose you want to calculate all operations on two polygons.  The naive way to 
 ```javascript
 // works but not efficient
 return {
-  union:         PolyBool.union        (poly1, poly2),
-  intersect:     PolyBool.intersect    (poly1, poly2),
-  difference:    PolyBool.difference   (poly1, poly2),
+  union        : PolyBool.union        (poly1, poly2),
+  intersect    : PolyBool.intersect    (poly1, poly2),
+  difference   : PolyBool.difference   (poly1, poly2),
   differenceRev: PolyBool.differenceRev(poly1, poly2),
-  xor:           PolyBool.xor          (poly1, poly2)
+  xor          : PolyBool.xor          (poly1, poly2)
 };
 ```
 
