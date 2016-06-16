@@ -62,11 +62,11 @@ PolyBool.intersect({
 ## Basic Usage
 
 ```javascript
-PolyBool.union        (poly1, poly2); // poly1 || poly2
-PolyBool.intersect    (poly1, poly2); // poly1 && poly2
-PolyBool.difference   (poly1, poly2); // poly1 -  poly2
-PolyBool.differenceRev(poly1, poly2); // poly2 -  poly1
-PolyBool.xor          (poly1, poly2); // poly1 != poly2
+var poly = PolyBool.union        (poly1, poly2);
+var poly = PolyBool.intersect    (poly1, poly2);
+var poly = PolyBool.difference   (poly1, poly2); // poly1 - poly2
+var poly = PolyBool.differenceRev(poly1, poly2); // poly2 - poly1
+var poly = PolyBool.xor          (poly1, poly2);
 ```
 
 Where `poly1`, `poly2`, and the return value are Polygon objects, in the format of:
