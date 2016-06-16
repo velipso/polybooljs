@@ -5,7 +5,6 @@ set -e
 pushd "$(dirname "$0")" > /dev/null
 SCRIPT_DIR="$(pwd)"
 popd > /dev/null
-SRC_DIR=$SCRIPT_DIR/src
 DIST_DIR=$SCRIPT_DIR/dist
 
 browserify $SCRIPT_DIR/index.js -o $DIST_DIR/polybool.js
