@@ -353,27 +353,12 @@ function recalc(){
 		'Blue - Red': PolyBool.differenceRev,
 		'Xor'       : PolyBool.xor
 	})[mode];
-	var BL = PolyBool.BuildLog();
-	try{
-		clipResult = {
-			result: func(
-				poly1.regions, poly1.inverted,
-				poly2.regions, poly2.inverted,
-				false, BL
-			),
-			build_log: BL.list
-		};
-	}
-	catch (e){
-		clipResult = {
-			result: { regions: [], inverted: false },
-			build_log: BL.list
-		};
-		throw e;
-	}
-	finally {
-		redraw();
-	}
+	var BL = PolyBool.buildLog(true);
+	clipResult = {
+		result: func(poly1, poly2),
+		build_log: BL
+	};
+	redraw();
 }
 
 function drawRegions(regions, offset){
@@ -453,6 +438,18 @@ function redraw(){
 				bl_vert = bl.x;
 				break;
 			case 'new_seg':
+				for (var i = 0; i < bl_segs.length; i++){
+					if (bl_segs[i].id === bl.seg.id){
+						bl_segs.splice(i, 1);
+						break;
+					}
+				}
+				for (var i = 0; i < bl_oldsegs.length; i++){
+					if (bl_oldsegs[i].id === bl.seg.id){
+						bl_oldsegs.splice(i, 1);
+						break;
+					}
+				}
 				bl_segs.push(bl.seg);
 				bl_segid[bl.seg.id] = {
 					phase: bl_phase,

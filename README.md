@@ -6,8 +6,10 @@ Boolean operations on polygons (union, intersection, difference, xor)
 
 1. Clips polygons for all boolean operations
 2. Removes unnecessary vertices
-3. Handles segments that are coincident (overlap perfectly, share vertices, one inside the other, etc)
+3. Handles segments that are coincident (overlap perfectly, share vertices, one inside the other,
+   etc)
 4. Uses formulas that take floating point irregularities into account (via configurable epsilon)
+5. Proides an API for constructing efficient sequences of operations
 
 # Demo
 
@@ -25,111 +27,184 @@ Based somewhat on the F. Martinez (2008) algorithm:
 
 `npm install polybooljs`
 
-Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist) directory for a single file build.  When included on a page, it will expose the global `PolyBool`.
+Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist)
+directory for a single file build.  When included on a page, it will expose the global `PolyBool`.
 
-# Crash Course
-
-## Example
+# Example
 
 ```javascript
 var PolyBool = require('polybooljs');
-PolyBool.union(
-  [ [[100,100],[200,200],[300,100]], [[300,100],[300,200],[400,100]] ],
-  false,
-  [ [[50,50],[200,50],[300,200]] ],
-  false
-);
-==> {
+PolyBool.intersect({
+    regions: [
+      [[50,50], [150,150], [190,50]],
+      [[130,50], [290,150], [290,50]]
+    ],
+    inverted: false
+  }, {
+    regions: [
+      [[110,20], [110,110], [20,20]],
+      [[130,170], [130,20], [260,20], [260,170]]
+    ],
+    inverted: false
+  });
+===> {
   regions: [
-    [[400,100],[300,100],[300,200],
-     [260,140],[300,100],[233.33333333333331,100],
-     [200,50],[50,50],[133.33333333333331,100],
-     [100,100],[200,200],[237.5,162.5],[300,200]]
+    [[50,50], [110,50], [110,110]],
+    [[178,80], [130,50], [130,130], [150,150]],
+    [[178,80], [190,50], [260,50], [260,131.25]]
   ],
   inverted: false
 }
 ```
 
-## Basic functions
+![PolyBool Example](https://github.com/voidqk/polybooljs/raw/master/example.png)
+
+## Basic Usage
 
 ```javascript
-PolyBool.union(                     // poly1 || poly2
-  regions1, inverted1,              // <-- polygon 1
-  regions2, inverted2,              // <-- polygon 2
-  [epsilon, [buildLog]]             // <-- optional
-);
-PolyBool.intersect    (...same...); // poly1 && poly2
-PolyBool.difference   (...same...); // poly1 - poly2
-PolyBool.differenceRev(...same...); // poly2 - poly1
-PolyBool.xor          (...same...); // poly1 ^ poly2
+PolyBool.union        (poly1, poly2); // poly1 || poly2
+PolyBool.intersect    (poly1, poly2); // poly1 && poly2
+PolyBool.difference   (poly1, poly2); // poly1 -  poly2
+PolyBool.differenceRev(poly1, poly2); // poly2 -  poly1
+PolyBool.xor          (poly1, poly2); // poly1 != poly2
 ```
 
-Where `regionsX` is a list regions for the polygon:
+Where `poly1`, `poly2`, and the return value are Polygon objects, in the format of:
 
 ```javascript
-[
-  [ [10, 10], [20, 20], [30, 10] ], // <- a single region
-  [ [20, 10], [30, 20], [40, 10] ]
-]
-```
-
-A single region is a list of points in `[x, y]` format.
-
-And `invertedX` is a bool indicating whether that polygon is inverted or not.
-
-The parameters `epsilon` and `buildLog` are explained below, but can safely be ignored for most uses.
-
-Returns an object:
-
-```javascript
+// polygon format
 {
-  regions: <list of regions in the result set>,
-  inverted: <whether the resulting polygon is inverted>
+  regions: [ // list of regions
+    // each region is a list of points
+    [[50,50], [150,150], [190,50]],
+    [[130,50], [290,150], [290,50]]
+  ],
+  inverted: false // is this polygon inverted?
 }
 ```
 
-# Computing Multiple Results
-
-The algorithm produces enough information to calculate all the operations.  If you want multiple operations performed, it is much more efficient to request all of them at once, via:
+# Core API
 
 ```javascript
-PolyBool.calculate(
-  regions1, inverted1,   // <--- polygon 1, like before
-  regions2, inverted2,   // <--- polygon 2, like before
-  operations,            // <--- list of operations to compute
-  [epsilon, [buildLog]]  // <--- optional
-);
+var segments = PolyBool.segments(polygon);
+var combined = PolyBool.combine(segments1, segments2);
+var segments = PolyBool.selectUnion(combined);
+var segments = PolyBool.selectIntersect(combined);
+var segments = PolyBool.selectDifference(combined);
+var segments = PolyBool.selectDifferenceRev(combined);
+var segments = PolyBool.selectXor(combined);
+var polygon  = PolyBool.polygon(segments);
 ```
 
-Where `regionsX`/`invertedX` are the same as before, and `operations` is a list of strings that are the operations to perform.
+Depending on your needs, it might be more efficient to construct your own sequence of operations
+using the lower-level API.  Note that `PolyBool.union`, `PolyBool.intersect`, etc, are just thin
+wrappers for convenience.
 
-To calculate all operations, pass the following as the `operations` parameter:
+There are three types of objects you will encounter in the core API:
 
-`[ 'union', 'intersect', 'difference', 'differenceRev', 'xor' ]`
+1. Polygons (discussed above, this is a list of regions and an `inverted` flag)
+2. Segments
+3. Combined Segments
 
-If you want less operations, just remove them from the list.  Order doesn't matter.
+The basic flow chart of the API is:
 
-The function returns an object with the result of each requested operation as the key:
+![PolyBool API Flow Chart](https://github.com/voidqk/polybooljs/raw/master/flowchart.png)
+
+You start by converting Polygons to Segments using `PolyBool.segments(poly)`.
+
+You convert Segments to Combined Segments using `PolyBool.combine(seg1, seg2)`.
+
+You select the resulting Segments from the Combined Segments using one of the selection operators
+`PolyBool.selectUnion(combined)`, `PolyBool.selectIntersect(combined)`, etc.  These selection
+functions return Segments.
+
+Once you're done, you convert the Segments back to Polygons using `PolyBool.polygon(segments)`.
+
+Each transition is costly, so you want to navigate wisely.  The selection transition is the least
+costly.
+
+## Advanced Example 1
+
+Suppose you wanted to union a list of polygons together.  The naive way to do it would be:
 
 ```javascript
-{
-  union: { // <-- only exists if 'union' was passed in operations list
-    regions: <list of regions for union result>,
-    inverted: <whether union polygon is inverted>
-  },
-  intersect: { // <-- only exists if 'intersect' was in operations... etc
-    regions: <list of regions for intersect result>,
-    inverted: <...etc...>
-  },
-  ...etc...
+// works but not efficient
+var result = PolyBool.union(polygons[0], polygons[1]);
+for (var i = 2; i < polygons.length; i++)
+  result = PolyBool.union(result, polygons[i]);
+return result;
+```
+
+Instead, it's more efficient to use the core API directly, like this:
+
+```javascript
+// works AND efficient
+var segments = PolyBool.segments(polygons[0]);
+for (var i = 1; i < polygons.length; i++){
+  var seg2 = PolyBool.segments(polygons[i]);
+  var comb = PolyBool.combine(segments, seg2);
+  segments = PolyBool.selectUnion(comb);
 }
+return PolyBool.polygon(segments);
+```
+
+## Advanced Example 2
+
+Suppose you want to calculate all operations on two polygons.  The naive way to do it would be:
+
+```javascript
+// works but not efficient
+return {
+  union:         PolyBool.union        (poly1, poly2),
+  intersect:     PolyBool.intersect    (poly1, poly2),
+  difference:    PolyBool.difference   (poly1, poly2),
+  differenceRev: PolyBool.differenceRev(poly1, poly2),
+  xor:           PolyBool.xor          (poly1, poly2)
+};
+```
+
+Instead, it's more efficient to use the core API directly, like this:
+
+```javascript
+// works AND efficient
+var seg1 = PolyBool.segments(poly1);
+var seg2 = PolyBool.segments(poly2);
+var comb = PolyBool.combine(seg1, seg2);
+return {
+  union        : PolyBool.polygon(PolyBool.selectUnion        (comb)),
+  intersect    : PolyBool.polygon(PolyBool.selectIntersect    (comb)),
+  difference   : PolyBool.polygon(PolyBool.selectDifference   (comb)),
+  differenceRev: PolyBool.polygon(PolyBool.selectDifferenceRev(comb)),
+  xor          : PolyBool.polygon(PolyBool.selectXor          (comb))
+};
+```
+
+## Advanced Example 3
+
+As an added bonus, just going from Polygon to Segments and back performs simplification on the
+polygon.
+
+Suppose you have garbage polygon data and just want to clean it up.  The naive way to do it would
+be:
+
+```javascript
+// union the polygon with nothing in order to clean up the data
+// works but not efficient
+var cleaned = PolyBool.union(polygon, { regions: [], inverted: false });
+```
+
+Instead, skip the combination and selection phase:
+
+```javascript
+// works AND efficient
+var cleaned = PolyBool.polygon(PolyBool.segments(polygon));
 ```
 
 # Epsilon
 
-Due to the beauty of floating point reality, floating point calculations are not exactly perfect.  This is a problem when trying to detect whether lines are on top of each other, or if vertices are exactly the same.
-
-The `epsilon` value in the API function calls allows you to set the boundary for considering values equal.  It is a number, and the default is `0.0000000001`.
+Due to the beauty of floating point reality, floating point calculations are not exactly perfect.
+This is a problem when trying to detect whether lines are on top of each other, or if vertices are
+exactly the same.
 
 Normally you would expect this to work:
 
@@ -149,30 +224,50 @@ else
   /* A and B are not equal */;
 ```
 
-This not-quite-equal problem is a bit annoying.
+You can set the epsilon value using:
 
-Fortunately, `PolyBool` has already figured out (or stolen) the required formulas, so all you need to do is provide an `epsilon` value, and everything will (read: should) work.
+`PolyBool.epsilon(newEpsilonValue);`
 
-If your polygons are really really large or really really tiny, then you will probably have to come up with your own epsilon value.
+Or, if you just want to get the current value:
 
-If `PolyBool` detects that your epsilon is too small, it will throw an error to try and help you.
+`var currentEpsilon = PolyBool.epsilon();`
+
+The default epsilon value is `0.0000000001`.
+
+If your polygons are really really large or really really tiny, then you will probably have to come
+up with your own epsilon value -- otherwise, the default should be fine.
+
+If `PolyBool` detects that your epsilon is too small or too large, it will throw an error:
+
+```
+PolyBool: Zero-length segment detected; your epsilon is probably too small or too large
+```
 
 # Build Log
 
-The optional `buildLog` parameter is used strictly for debugging and creating the animation in the demo.
+The library also has an option for tracking execution of the internal algorithms.  This is useful
+for debugging or creating the animation on the demo page.
 
-It simply logs the processing of the algorithm, so it can be inspected and played back.
+By default, the logging is disabled.  But you can enable or reset it via:
 
-If you want a build log for some reason, you can create one via:
+`var buildLog = PolyBool.buildLog(true);`
 
-`var buildLog = PolyBool.BuildLog();`
+The return value is an empty list that will have log entries added to it as more API calls are made.
 
-You can inspect the log by looking in the values inside of `buildLog.list`:
+You can inspect the log by looking in the values:
 
 ```javascript
-buildLog.list.forEach(function(logEntry){
+buildLog.forEach(function(logEntry){
   console.log(logEntry.type, logEntry.data);
 });
 ```
 
 Don't rely on the build log functionality to be consistent across releases.
+
+You can disable the build log via:
+
+`PolyBool.buildLog(false);`
+
+You can get the current list (or `false` if disabled) via:
+
+`var currentLog = PolyBool.buildLog();`
