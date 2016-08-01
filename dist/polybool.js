@@ -692,13 +692,13 @@ function Intersecter(selfIntersection, eps, buildLog){
 
 					// merge ev.seg's fill information into eve.seg
 
-					var toggle; // are we a toggling edge?
-					if (ev.seg.myFill.below === null) // if we are a new segment...
-						toggle = true; // then we toggle
-					else // we are a segment that has previous knowledge from a division
-						toggle = ev.seg.myFill.above !== ev.seg.myFill.below; // calculate toggle
-
 					if (selfIntersection){
+						var toggle; // are we a toggling edge?
+						if (ev.seg.myFill.below === null)
+							toggle = true;
+						else
+							toggle = ev.seg.myFill.above !== ev.seg.myFill.below;
+
 						// merge two segments that belong to the same polygon
 						// think of this as sandwiching two segments together, where `eve.seg` is
 						// the bottom -- this will cause the above fill flag to toggle
