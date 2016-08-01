@@ -9,7 +9,7 @@ Boolean operations on polygons (union, intersection, difference, xor)
 3. Handles segments that are coincident (overlap perfectly, share vertices, one inside the other,
    etc)
 4. Uses formulas that take floating point irregularities into account (via configurable epsilon)
-5. Proides an API for constructing efficient sequences of operations
+5. Provides an API for constructing efficient sequences of operations
 
 # Demo
 

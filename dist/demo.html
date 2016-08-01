@@ -1141,21 +1141,22 @@ function init(){
 		else
 			mouseTrackHover(mp);
 
-		/* draws mouse position in upper-left of canvas
-		ctx.save();
-		var mx = mp[0], my = mp[1] - cnvHeight / 2;
-		if (hover !== false){
-			mx = hover.region[hover.vert][0];
-			my = hover.region[hover.vert][1];
+		if (window.debugMousePos === true){
+			ctx.save();
+			var mx = mp[0], my = mp[1] - cnvHeight / 2;
+			if (hover !== false){
+				mx = hover.region[hover.vert][0];
+				my = hover.region[hover.vert][1];
+			}
+			ctx.setTransform(rscale, 0, 0, rscale, 0, 0);
+			ctx.fillStyle = '#fff';
+			ctx.fillRect(0, 0, 100, 20);
+			ctx.fillStyle = '#000';
+			ctx.textAlign = 'left'
+			ctx.textBaseline = 'top';
+			ctx.fillText('(' + mx + ', ' + my + ')', 0, 0);
+			ctx.restore();
 		}
-		ctx.setTransform(rscale, 0, 0, rscale, 0, 0);
-		ctx.fillStyle = '#fff';
-		ctx.fillRect(0, 0, 100, 20);
-		ctx.fillStyle = '#000';
-		ctx.textAlign = 'left'
-		ctx.textBaseline = 'top';
-		ctx.fillText('(' + mx + ', ' + my + ')', 0, 0);
-		ctx.restore(); // */
 	});
 
 	cnv.addEventListener('mouseup', function(e){
