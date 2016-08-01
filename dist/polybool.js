@@ -272,13 +272,13 @@ function Epsilon(eps){
 			// if `dot` is 0, then `p` == `left` or `left` == `right` (reject)
 			// if `dot` is less than 0, then `p` is to the left of `left` (reject)
 			if (dot < eps)
-			return false;
+				return false;
 
 			var sqlen = d_rx_lx * d_rx_lx + d_ry_ly * d_ry_ly;
 			// if `dot` > `sqlen`, then `p` is to the right of `right` (reject)
 			// therefore, if `dot - sqlen` is greater than 0, then `p` is to the right of `right` (reject)
 			if (dot - sqlen > -eps)
-			return false;
+				return false;
 
 			return true;
 		},
@@ -292,7 +292,7 @@ function Epsilon(eps){
 			return my.pointsSameX(p1, p2) && my.pointsSameY(p1, p2);
 		},
 		pointsCompare: function(p1, p2){
-			// returns -1 if p1 is smaller, 1 is p2 is smaller, 0 if equal
+			// returns -1 if p1 is smaller, 1 if p2 is smaller, 0 if equal
 			if (my.pointsSameX(p1, p2))
 				return my.pointsSameY(p1, p2) ? 0 : (p1[1] < p2[1] ? -1 : 1);
 			return p1[0] < p2[0] ? -1 : 1;
@@ -531,10 +531,8 @@ function Intersecter(selfIntersection, eps, buildLog){
 			var b2 = ev2.seg.end;
 
 			if (eps.pointsCollinear(a1, b1, b2)){
-				if (eps.pointsCollinear(a2, b1, b2)){
-					// TODO: why do I need to do this again? why can't I just return 1 straight up?
-					return eventCompare(true, a1, a2, true, b1, b2);
-				}
+				if (eps.pointsCollinear(a2, b1, b2))
+					return 1;//eventCompare(true, a1, a2, true, b1, b2);
 				return eps.pointAboveOrOnLine(a2, b1, b2) ? 1 : -1;
 			}
 			return eps.pointAboveOrOnLine(a1, b1, b2) ? 1 : -1;
@@ -618,10 +616,9 @@ function Intersecter(selfIntersection, eps, buildLog){
 						}
 					}
 
-					//	         (a1)---(a2)
-					//	  (b1)----------(b2)
+					//         (a1)---(a2)
+					//  (b1)----------(b2)
 					eventDivide(ev2, a1);
-					return false;
 				}
 			}
 			else{
@@ -695,11 +692,18 @@ function Intersecter(selfIntersection, eps, buildLog){
 
 					// merge ev.seg's fill information into eve.seg
 
+					var toggle; // are we a toggling edge?
+					if (ev.seg.myFill.below === null) // if we are a new segment...
+						toggle = true; // then we toggle
+					else // we are a segment that has previous knowledge from a division
+						toggle = ev.seg.myFill.above !== ev.seg.myFill.below; // calculate toggle
+
 					if (selfIntersection){
 						// merge two segments that belong to the same polygon
 						// think of this as sandwiching two segments together, where `eve.seg` is
 						// the bottom -- this will cause the above fill flag to toggle
-						eve.seg.myFill.above = !eve.seg.myFill.above;
+						if (toggle)
+							eve.seg.myFill.above = !eve.seg.myFill.above;
 					}
 					else{
 						// merge two segments that belong to different polygons
@@ -821,7 +825,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 				segments.push(ev.seg);
 			}
 
-			// remove the first event and continue
+			// remove the event and continue
 			event_root.getHead().remove();
 		}
 
@@ -1088,12 +1092,12 @@ function SegmentChainer(segments, eps, buildLog){
 					// oppo2 ---oppo--->grow
 					if (addToHead){
 						if (buildLog)
-							buildLog.chainRemoveHead(first_match.index, grow);
+							buildLog.chainRemoveTail(first_match.index, grow);
 						chain.pop();
 					}
 					else{
 						if (buildLog)
-							buildLog.chainRemoveTail(first_match.index, grow);
+							buildLog.chainRemoveHead(first_match.index, grow);
 						chain.shift();
 					}
 				}
@@ -1353,7 +1357,7 @@ var SegmentSelector = {
 			0, 2, 1, 0,
 			0, 0, 1, 1,
 			0, 2, 0, 2,
-			0, 0, 0, 0,
+			0, 0, 0, 0
 		], buildLog);
 	},
 	xor: function(segments, buildLog){ // primary ^ secondary
