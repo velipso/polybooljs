@@ -249,7 +249,8 @@ var polyCases = [{
 }];
 
 var nextDemoIndex = -1;
-var caseName, poly1, poly2;
+var caseName, poly1, poly2, polyBox;
+var scaleToFit = false;
 function nextDemo(d){
 	nextDemoIndex = (nextDemoIndex + d) % polyCases.length;
 	if (nextDemoIndex < 0)
@@ -258,6 +259,25 @@ function nextDemo(d){
 	caseName = (nextDemoIndex + 1) + '. ' + demo.name;
 	poly1 = demo.poly1;
 	poly2 = demo.poly2;
+	polyBox = { min: [false, false], max: [false, false] };
+	function calcBox(regions){
+		for (var r = 0; r < regions.length; r++){
+			var region = regions[r];
+			for (var p = 0; p < region.length; p++){
+				var pt = region[p];
+				if (polyBox.min[0] === false || pt[0] < polyBox.min[0])
+					polyBox.min[0] = pt[0];
+				if (polyBox.min[1] === false || pt[1] < polyBox.min[1])
+					polyBox.min[1] = pt[1];
+				if (polyBox.max[0] === false || pt[0] > polyBox.max[0])
+					polyBox.max[0] = pt[0];
+				if (polyBox.max[1] === false || pt[1] > polyBox.max[1])
+					polyBox.max[1] = pt[1];
+			}
+		}
+	}
+	calcBox(poly1.regions);
+	calcBox(poly2.regions);
 	recalc();
 }
 
@@ -295,7 +315,8 @@ function drawVerts(poly, offset){
 	poly.regions.forEach(function(region, region_i){
 		for (var i = 0; i < region.length; i++){
 			ctx.beginPath();
-			ctx.arc(region[i][0], region[i][1] + offset, vertRadius(region, i), 0, Math.PI * 2);
+			ctx.arc(scaleX(region[i][0]), scaleY(region[i][1]) + offset, vertRadius(region, i),
+				0, Math.PI * 2);
 			ctx.fill();
 		}
 	});
@@ -376,11 +397,37 @@ function recalc(){
 	redraw();
 }
 
+function scaleX(x){
+	if (!scaleToFit)
+		return x;
+	return (x - polyBox.min[0]) * 650 / (polyBox.max[0] - polyBox.min[0]) + 25;
+}
+
+function scaleY(y){
+	if (!scaleToFit)
+		return y;
+	return (y - polyBox.min[1]) * 200 / (polyBox.max[1] - polyBox.min[1]) + 25;
+}
+
+function unscaleX(x){
+	if (!scaleToFit)
+		return x;
+	return (x - 25) * (polyBox.max[0] - polyBox.min[0]) / 650 + polyBox.min[0];
+}
+
+function unscaleY(y){
+	if (!scaleToFit)
+		return y;
+	return (y - 25) * (polyBox.max[1] - polyBox.min[1]) / 200 + polyBox.min[1];
+}
+
 function drawRegions(regions, offset){
 	regions.forEach(function(region, i){
-		ctx.moveTo(region[0][0], region[0][1] + offset);
+		if (region.length <= 0)
+			return;
+		ctx.moveTo(scaleX(region[0][0]), scaleY(region[0][1]) + offset);
 		for (var i = 1; i < region.length; i++)
-			ctx.lineTo(region[i][0], region[i][1] + offset);
+			ctx.lineTo(scaleX(region[i][0]), scaleY(region[i][1]) + offset);
 		ctx.closePath();
 	});
 }
@@ -1087,13 +1134,15 @@ function init(){
 	}
 
 	function closestPoint(poly, x, y){
+		x = unscaleX(x);
+		y = unscaleY(y);
 		var reg = false;
 		var vert = false;
 		var len2 = false;
 		poly.regions.forEach(function(region){
 			for (var i = 0; i < region.length; i++){
-				var dx = region[i][0] - x;
-				var dy = region[i][1] - y;
+				var dx = scaleX(region[i][0] - x);
+				var dy = scaleY(region[i][1] - y);
 				var thisLen2 = dx * dx + dy * dy;
 				if (len2 === false || thisLen2 < len2){
 					reg = region;
@@ -1148,8 +1197,8 @@ function init(){
 			}
 			if (dx !== 0 || dy !== 0){
 				dragging = [dragging[0] + dx, dragging[1] + dy];
-				pt[0] += dx;
-				pt[1] += dy;
+				pt[0] = unscaleX(scaleX(pt[0]) + dx);
+				pt[1] = unscaleY(scaleY(pt[1]) + dy);
 				recalc();
 			}
 		}

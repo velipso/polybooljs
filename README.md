@@ -23,6 +23,10 @@ Based somewhat on the F. Martinez (2008) algorithm:
 
 [Code](https://github.com/akavel/martinez-src)
 
+# Tutorial
+
+[View the companion tutorial](http://syntheti.cc/article/polygon-clipping-pt2/)
+
 # Installing
 
 `npm install polybooljs`
