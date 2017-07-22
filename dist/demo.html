@@ -395,6 +395,52 @@ function recalc(){
 		build_log: BL
 	};
 	redraw();
+
+	// output GeoJSON
+
+	var geojson = PolyBool.polygonToGeoJSON(clipResult.result);
+	function scalePoly(p){
+		// we need to scale the result because pixel coordinates are around 500, and that's not
+		// valid long/lat coordinates... so we just divide everything by 10
+		// (and out of pure luck this tends to place our polygons over Ethiopia...!)
+		for (var i = 0; i < p.length; i++){
+			for (var j = 0; j < p[i].length; j++)
+				p[i][j] = [p[i][j][0] * 0.1, p[i][j][1] * 0.1];
+		}
+	}
+	// I suppose we could just JSON.stringify(geojson, null, '  '), but that doesn't look so
+	// pretty (imho), so this is a bit stupid but I format it myself so it looks better :-P
+	var out = ['{', '  "type": ' + JSON.stringify(geojson.type) + ','];
+	function outLine(line, space, tail){
+		var o = space + '[';
+		for (var i = 0; i < line.length; i++){
+			o += '[' + line[i] + ']';
+			if (i < line.length - 1)
+				o += ', ';
+		}
+		out.push(o + ']' + (tail ? '' : ','));
+	}
+	if (geojson.type == 'Polygon'){
+		scalePoly(geojson.coordinates);
+		out.push('  "coordinates": [');
+		for (var i = 0; i < geojson.coordinates.length; i++)
+			outLine(geojson.coordinates[i], '      ', i === geojson.coordinates.length - 1);
+		out.push('  ]');
+	}
+	else{
+		for (var i = 0; i < geojson.coordinates.length; i++)
+			scalePoly(geojson.coordinates[i]);
+		out.push('  "coordinates": [[');
+		for (var i = 0; i < geojson.coordinates.length; i++){
+			for (var j = 0; j < geojson.coordinates[i].length; j++)
+				outLine(geojson.coordinates[i][j], '      ', j === geojson.coordinates[i].length - 1);
+			if (i < geojson.coordinates.length - 1)
+				out.push('    ], [');
+		}
+		out.push('  ]]');
+	}
+	out.push('}', '');
+	document.getElementById('geojson').value = out.join('\n');
 }
 
 function scaleX(x){
@@ -1294,6 +1340,10 @@ function init(){
 		<button onclick="javascript: nextDemo(-1);">Prev</button>
 		<button onclick="javascript: nextDemo(1);">Next</button>
 	</p>
+	<p>
+		<a href="https://tools.ietf.org/html/rfc7946">GeoJSON</a> of result (experimental):
+	</p>
+	<center><textarea id="geojson" rows="8" style="width: 650px;"></textarea></center>
 	<p>
 		Polygon Clipping Demo based somewhat on the F. Martinez et al. algorithm (2008)
 	</p>

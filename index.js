@@ -9,11 +9,13 @@ var Epsilon = require('./lib/epsilon');
 var Intersecter = require('./lib/intersecter');
 var SegmentChainer = require('./lib/segment-chainer');
 var SegmentSelector = require('./lib/segment-selector');
+var GeoJSON = require('./lib/geojson');
 
 var buildLog = false;
 var epsilon = Epsilon();
 
-var PolyBool = {
+var PolyBool;
+PolyBool = {
 	// getter/setter for buildLog
 	buildLog: function(bl){
 		if (bl === true)
@@ -82,6 +84,14 @@ var PolyBool = {
 			regions: SegmentChainer(segments.segments, epsilon, buildLog),
 			inverted: segments.inverted
 		};
+	},
+
+	// GeoJSON converters
+	polygonFromGeoJSON: function(geojson){
+		return GeoJSON.toPolygon(PolyBool, geojson);
+	},
+	polygonToGeoJSON: function(poly){
+		return GeoJSON.fromPolygon(PolyBool, epsilon, poly);
 	},
 
 	// helper functions for common operations

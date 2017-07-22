@@ -10,6 +10,7 @@ Boolean operations on polygons (union, intersection, difference, xor)
    etc)
 4. Uses formulas that take floating point irregularities into account (via configurable epsilon)
 5. Provides an API for constructing efficient sequences of operations
+6. Support for GeoJSON Polygon and MultiPolygon (experimental)
 
 # Resources
 
@@ -78,6 +79,25 @@ Where `poly1`, `poly2`, and the return value are Polygon objects, in the format 
   inverted: false // is this polygon inverted?
 }
 ```
+
+# GeoJSON (experimental)
+
+There are also functions for converting between the native polygon format and
+[GeoJSON](https://tools.ietf.org/html/rfc7946).
+
+Note: These functions are currently **experimental**, and I'm hoping users can provide feedback.
+Please comment in [this issue on GitHub](https://github.com/voidqk/polybooljs/issues/7) -- including
+letting me know if it's working as expected.  I don't use GeoJSON, but I thought I would take a
+crack at conversion functions.
+
+Use the following functions:
+
+```
+var geojson = PolyBool.polygonToGeoJSON(poly);
+var poly    = PolyBool.polygonFromGeoJSON(geojson);
+```
+
+Only `"Polygon"` and `"MultiPolygon"` types are supported.
 
 # Core API
 
