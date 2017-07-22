@@ -1,6 +1,6 @@
 {
   "name": "polybooljs",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Boolean operations on polygons (union, intersection, difference, xor)",
   "main": "index.js",
   "repository": {
