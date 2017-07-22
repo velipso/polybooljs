@@ -1,6 +1,6 @@
 # polybooljs
 
-Boolean operations on polygons (union, intersection, difference, xor)
+Boolean operations on polygons (union, intersection, difference, xor).
 
 # Features
 
@@ -92,7 +92,7 @@ crack at conversion functions.
 
 Use the following functions:
 
-```
+```javascript
 var geojson = PolyBool.polygonToGeoJSON(poly);
 var poly    = PolyBool.polygonFromGeoJSON(geojson);
 ```
