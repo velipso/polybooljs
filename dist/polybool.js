@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 /*
  * @copyright 2016 Sean Connelly (@voidqk), http://syntheti.cc
  * @license MIT
@@ -612,7 +612,7 @@ module.exports = GeoJSON;
 // this is the core work-horse
 //
 
-var LinkedList = require('./linked-list');
+var List = require('./list');
 
 function Intersecter(selfIntersection, eps, buildLog){
 	// selfIntersection is true/false depending on the phase of the overall algorithm
@@ -651,7 +651,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 	// event logic
 	//
 
-	var event_root = LinkedList.create();
+	var event_list = List.create();
 
 	function eventCompare(p1_isStart, p1_1, p1_2, p2_isStart, p2_1, p2_2){
 		// compare the selected points first
@@ -674,18 +674,19 @@ function Intersecter(selfIntersection, eps, buildLog){
 	}
 
 	function eventAdd(ev, other_pt){
-		event_root.insertBefore(ev, function(here){
+		event_list.insertBefore(ev, function(here){
 			// should ev be inserted before here?
+			if (here === ev) return 0;
 			var comp = eventCompare(
 				ev  .isStart, ev  .pt,      other_pt,
 				here.isStart, here.pt, here.other.pt
 			);
-			return comp < 0;
+			return comp;
 		});
 	}
 
 	function eventAddSegmentStart(seg, primary){
-		var ev_start = LinkedList.node({
+		var ev_start = List.node({
 			isStart: true,
 			pt: seg.start,
 			seg: seg,
@@ -698,7 +699,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 	}
 
 	function eventAddSegmentEnd(ev_start, seg, primary){
-		var ev_end = LinkedList.node({
+		var ev_end = List.node({
 			isStart: false,
 			pt: seg.end,
 			seg: seg,
@@ -743,7 +744,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 		// status logic
 		//
 
-		var status_root = LinkedList.create();
+		var status_list = List.create();
 
 		function statusCompare(ev1, ev2){
 			var a1 = ev1.seg.start;
@@ -760,9 +761,10 @@ function Intersecter(selfIntersection, eps, buildLog){
 		}
 
 		function statusFindSurrounding(ev){
-			return status_root.findTransition(function(here){
+			return status_list.findTransition({ev:ev}, function(here){
+				if (here.ev === ev) return 0;
 				var comp = statusCompare(ev, here.ev);
-				return comp > 0;
+				return -comp;
 			});
 		}
 
@@ -872,8 +874,8 @@ function Intersecter(selfIntersection, eps, buildLog){
 		// main event loop
 		//
 		var segments = [];
-		while (!event_root.isEmpty()){
-			var ev = event_root.getHead();
+		while (!event_list.isEmpty()){
+			var ev = event_list.getHead();
 
 			if (buildLog)
 				buildLog.vert(ev.pt[0]);
@@ -941,7 +943,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 					ev.remove();
 				}
 
-				if (event_root.getHead() !== ev){
+				if (event_list.getHead() !== ev){
 					// something was inserted before us in the event queue, so loop back around and
 					// process it before continuing
 					if (buildLog)
@@ -1014,7 +1016,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 				}
 
 				// insert the status and remember it for later removal
-				ev.other.status = surrounding.insert(LinkedList.node({ ev: ev }));
+				ev.other.status = surrounding.insert(List.node({ ev: ev }));
 			}
 			else{
 				var st = ev.status;
@@ -1026,8 +1028,11 @@ function Intersecter(selfIntersection, eps, buildLog){
 
 				// removing the status will create two new adjacent edges, so we'll need to check
 				// for those
-				if (status_root.exists(st.prev) && status_root.exists(st.next))
-					checkIntersection(st.prev.ev, st.next.ev);
+				var i = status_list.getIndex(st);
+				if (i > 0 && i < status_list.nodes.length - 1) {
+					var before = status_list.nodes[i - 1], after = status_list.nodes[i + 1];
+					checkIntersection(before.ev, after.ev);
+				}
 
 				if (buildLog)
 					buildLog.statusRemove(st.ev.seg);
@@ -1047,7 +1052,7 @@ function Intersecter(selfIntersection, eps, buildLog){
 			}
 
 			// remove the event and continue
-			event_root.getHead().remove();
+			event_list.getHead().remove();
 		}
 
 		if (buildLog)
@@ -1110,88 +1115,65 @@ function Intersecter(selfIntersection, eps, buildLog){
 
 module.exports = Intersecter;
 
-},{"./linked-list":6}],6:[function(require,module,exports){
+},{"./list":6}],6:[function(require,module,exports){
 // (c) Copyright 2016, Sean Connelly (@voidqk), http://syntheti.cc
 // MIT License
 // Project Home: https://github.com/voidqk/polybooljs
 
-//
-// simple linked list implementation that allows you to traverse down nodes and save positions
-//
+// from d3-array
+function bisect(compare) {
+  return function right(a, x, lo, hi) {
+      if (lo == null) lo = 0;
+      if (hi == null) hi = a.length;
+      while (lo < hi) {
+        var mid = lo + hi >>> 1;
+        if (compare(a[mid], x) > 0) hi = mid;
+        else lo = mid + 1;
+      }
+      return lo;
+  };
+}
 
-var LinkedList = {
-	create: function(){
-		var my = {
-			root: { root: true, next: null },
-			exists: function(node){
-				if (node === null || node === my.root)
-					return false;
-				return true;
-			},
-			isEmpty: function(){
-				return my.root.next === null;
-			},
-			getHead: function(){
-				return my.root.next;
-			},
-			insertBefore: function(node, check){
-				var last = my.root;
-				var here = my.root.next;
-				while (here !== null){
-					if (check(here)){
-						node.prev = here.prev;
-						node.next = here;
-						here.prev.next = node;
-						here.prev = node;
-						return;
-					}
-					last = here;
-					here = here.next;
-				}
-				last.next = node;
-				node.prev = last;
-				node.next = null;
-			},
-			findTransition: function(check){
-				var prev = my.root;
-				var here = my.root.next;
-				while (here !== null){
-					if (check(here))
-						break;
-					prev = here;
-					here = here.next;
-				}
-				return {
-					before: prev === my.root ? null : prev,
-					after: here,
-					insert: function(node){
-						node.prev = prev;
-						node.next = here;
-						prev.next = node;
-						if (here !== null)
-							here.prev = node;
-						return node;
-					}
-				};
-			}
-		};
-		return my;
-	},
-	node: function(data){
-		data.prev = null;
-		data.next = null;
-		data.remove = function(){
-			data.prev.next = data.next;
-			if (data.next)
-				data.next.prev = data.prev;
-			data.prev = null;
-			data.next = null;
-		};
-		return data;
-	}
+var List = {
+  create: function() {
+    var my = {
+      nodes: [],
+      exists: function(node) {
+        return my.nodes.includes(node);
+      },
+      getIndex: function(node) {
+        return my.nodes.indexOf(node);
+      },
+      isEmpty: function() {
+        return my.nodes.length === 0;
+      },
+      getHead: function() {
+        return my.nodes[0];
+      },
+      insertBefore: function(node, check) {
+        my.findTransition(node, check).insert(node);
+      },
+      findTransition: function(node, check) {
+        var i = bisect(function (a, b) { return check(b) - check(a); })(my.nodes, node);
+        return {
+          before: i === 0 ? null : my.nodes[i - 1],
+          after: my.nodes[i] || null,
+          insert: function(node) {
+            my.nodes.splice(i, 0, node);
+            node.remove = function() { my.nodes.splice(my.nodes.indexOf(node), 1); };
+            return node;
+          }
+        };
+      }
+    };
+    return my;
+  },
+  node: function(data) {
+    return data;
+  }
 };
 
-module.exports = LinkedList;
+module.exports = List;
 
 },{}],7:[function(require,module,exports){
 // (c) Copyright 2016, Sean Connelly (@voidqk), http://syntheti.cc
