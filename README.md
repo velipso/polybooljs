@@ -287,3 +287,7 @@ You can disable the build log via:
 You can get the current list (or `false` if disabled) via:
 
 `var currentLog = PolyBool.buildLog();`
+
+# Other projects that might interest you
+
+Java port by @the3deers: https://github.com/the3deers/polybool-java
