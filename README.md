@@ -291,3 +291,5 @@ You can get the current list (or `false` if disabled) via:
 # Other projects that might interest you
 
 Java port by @the3deers: https://github.com/the3deers/polybool-java
+
+Java port by @Menecats: https://github.com/Menecats/polybool-java
