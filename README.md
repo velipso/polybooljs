@@ -20,6 +20,15 @@ Boolean operations on polygons (union, intersection, difference, xor).
   [Paper](http://www.cs.ucr.edu/~vbz/cs230papers/martinez_boolean.pdf),
   [Code](https://github.com/akavel/martinez-src)
 
+### Ports
+
+Other kind souls have ported this library:
+
+* [Java port by @the3deers](https://github.com/the3deers/polybool-java)
+* [Java port by @Menecats](https://github.com/Menecats/polybool-java)
+* [.NET port by @idormenco](https://github.com/idormenco/PolyBool.Net)
+* Please make a ticket if you'd like to be added here :-)
+
 # Installing
 
 `npm install polybooljs`
@@ -287,12 +296,3 @@ You can disable the build log via:
 You can get the current list (or `false` if disabled) via:
 
 `var currentLog = PolyBool.buildLog();`
-
-# Ports
-
-Other kind souls have ported this library:
-
-* [Java port by @the3deers](https://github.com/the3deers/polybool-java)
-* [Java port by @Menecats](https://github.com/Menecats/polybool-java)
-* [.NET port by @idormenco](https://github.com/idormenco/PolyBool.Net)
-* Please make a ticket if you'd like to be added here :-)
