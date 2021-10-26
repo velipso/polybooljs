@@ -288,8 +288,11 @@ You can get the current list (or `false` if disabled) via:
 
 `var currentLog = PolyBool.buildLog();`
 
-# Other projects that might interest you
+# Ports
 
-Java port by @the3deers: https://github.com/the3deers/polybool-java
+Other kind souls have ported this library:
 
-Java port by @Menecats: https://github.com/Menecats/polybool-java
+* [Java port by @the3deers](https://github.com/the3deers/polybool-java)
+* [Java port by @Menecats](https://github.com/Menecats/polybool-java)
+* [.NET port by @idormenco](https://github.com/idormenco/PolyBool.Net)
+* Please make a ticket if you'd like to be added here :-)
