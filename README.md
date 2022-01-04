@@ -63,7 +63,7 @@ PolyBool.intersect({
 }
 ```
 
-![PolyBool Example](https://github.com/voidqk/polybooljs/raw/master/example.png)
+![PolyBool Example](https://github.com/velipso/polybooljs/raw/master/example.png)
 
 ## Basic Usage
 
