@@ -14,7 +14,7 @@ Boolean operations on polygons (union, intersection, difference, xor).
 
 # Resources
 
-* [Demo + Animation](https://rawgit.com/voidqk/polybooljs/master/dist/demo.html)
+* [Demo + Animation](https://unpkg.com/polybooljs@1.2.0/dist/demo.html)
 * [Companion Tutorial](https://sean.cm/a/polygon-clipping-pt2)
 * Based somewhat on the F. Martinez (2008) algorithm:
   [Paper](http://www.cs.ucr.edu/~vbz/cs230papers/martinez_boolean.pdf),
@@ -33,7 +33,7 @@ Other kind souls have ported this library:
 
 `npm install polybooljs`
 
-Or, for the browser, look in the [`dist/`](https://github.com/voidqk/polybooljs/tree/master/dist)
+Or, for the browser, look in the [`dist/`](https://github.com/velipso/polybooljs/tree/master/dist)
 directory for a single file build.  When included on a page, it will expose the global `PolyBool`.
 
 # Example
@@ -95,7 +95,7 @@ There are also functions for converting between the native polygon format and
 [GeoJSON](https://tools.ietf.org/html/rfc7946).
 
 Note: These functions are currently **experimental**, and I'm hoping users can provide feedback.
-Please comment in [this issue on GitHub](https://github.com/voidqk/polybooljs/issues/7) -- including
+Please comment in [this issue on GitHub](https://github.com/velipso/polybooljs/issues/7) -- including
 letting me know if it's working as expected.  I don't use GeoJSON, but I thought I would take a
 crack at conversion functions.
 
@@ -133,7 +133,7 @@ There are three types of objects you will encounter in the core API:
 
 The basic flow chart of the API is:
 
-![PolyBool API Flow Chart](https://github.com/voidqk/polybooljs/raw/master/flowchart.png)
+![PolyBool API Flow Chart](https://github.com/velipso/polybooljs/raw/master/flowchart.png)
 
 You start by converting Polygons to Segments using `PolyBool.segments(poly)`.
 
