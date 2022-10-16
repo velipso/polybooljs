@@ -28,6 +28,7 @@ Other kind souls have ported this library:
 * [Java port by @Menecats](https://github.com/Menecats/polybool-java)
 * [.NET port by @idormenco](https://github.com/idormenco/PolyBool.Net)
 * [Flutter/Dart port by @mohammedX6](https://github.com/mohammedX6/poly_bool_dart)
+* [Python port by @KaivnD](https://github.com/KaivnD/pypolybool)
 * Please make a ticket if you'd like to be added here :-)
 
 # Installing
