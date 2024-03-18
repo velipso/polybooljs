@@ -2,6 +2,9 @@
 
 Boolean operations on polygons (union, intersection, difference, xor).
 
+NOTE: I am no longer maintaining this, but I have created a TypeScript version,
+available here: [@velipso/polybool](https://github.com/velipso/polybool).
+
 # Features
 
 1. Clips polygons for all boolean operations
@@ -24,7 +27,6 @@ Boolean operations on polygons (union, intersection, difference, xor).
 
 Other kind souls have ported this library:
 
-* [TypeScript port](https://github.com/velipso/polybool) -- My initial stab at porting to TypeScript, still needs testing
 * [Java port by @the3deers](https://github.com/the3deers/polybool-java)
 * [Java port by @Menecats](https://github.com/Menecats/polybool-java)
 * [.NET port by @idormenco](https://github.com/idormenco/PolyBool.Net)
