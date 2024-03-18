@@ -1,11 +1,11 @@
 {
   "name": "polybooljs",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Boolean operations on polygons (union, intersection, difference, xor)",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/voidqk/polybooljs"
+    "url": "https://github.com/velipso/polybooljs"
   },
   "keywords": [
     "polygon",
@@ -21,8 +21,7 @@
   ],
   "author": {
     "name": "Sean",
-    "twitter": "voidqk",
-    "url": "http://syntheti.cc"
+    "url": "https://sean.cm/"
   },
   "license": "MIT"
 }
